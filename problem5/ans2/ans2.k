@@ -44,6 +44,7 @@ void confirm(Decl[] decls, Event[] events) {
     int[][] passenger = new Int[][numElevator+1];
     Event[][] chkevents = new Event[][numElevator+1];
     int declComfirmed = 0;
+    int result = 0;
     for (int i = 0; i < numElevator+1; i++) {
         passenger[i] = [];
         chkevents[i] = [new Event((i + ",0,1,E,0,0,0,0,0").split(","))];
@@ -51,7 +52,6 @@ void confirm(Decl[] decls, Event[] events) {
     Event publicLast = new Event(("1,0,1,E,0,0,0,0,0").split(","));
     for (int i = 0; i < |events|; i++) {
         Event e = events[i];
-        print i, e;
         assert(publicLast.time <= e.time);
         assert(e.id <= numElevator);
         assert(e.eventStr == "E" || e.eventStr == "B");
@@ -63,6 +63,7 @@ void confirm(Decl[] decls, Event[] events) {
                 foreach (int p in e.target) {
                     assert(passenger[e.id].indexOf(p) != -1);
                     passenger[e.id].remove(passenger[e.id].indexOf(p));
+                    result += e.time - decls[p].requestTime;
                     declComfirmed++;
                 }
             }
@@ -84,6 +85,7 @@ void confirm(Decl[] decls, Event[] events) {
     }
     assert(declComfirmed == |decls|-1);
     OUT.println("Confirmed");
+    OUT.println("Total Delay: " + result);
 }
 void main(String[] args) {
     if (|args| != 4) {
