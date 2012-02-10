@@ -75,6 +75,7 @@ void confirm(Decl[] decls, Event[] events) {
                 foreach (int p in e.target) {
                     assert(decls[p].requestTime <= e.time);
                     passenger[e.id].add(p);
+                    assert(|passenger[e.id]| <= capacity);
                 }
             }
             chkevents[e.id].add(e);
