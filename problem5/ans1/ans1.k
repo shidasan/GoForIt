@@ -13,71 +13,21 @@ class Decl {
         _offFloor = (int)data[3];
     }
 }
-class Elevator {
-    int id;
-    int floor;
-    Array<Int> passenger;
-    Elevator(int id) {
-        _id = id;
-        _passenger = [];
-        _floor = 1;
-    }
-    int changeFloor(int targetFloor) {
-        int tmp = _floor;
-        _floor = targetFloor;
-        return Math.abs(tmp - targetFloor) * 2;
-    }
-}
-class ElevatorEvent {
-    int id;
-    int time;
-    int floor;
-    boolean isOpen;
-    Array<Int> difference;
-    ElevatorEvent (Elevator e, Array<Int> difference, int time, boolean isOpen) {
-        _id = e.id;
-        _time = time;
-        _floor = e.floor;
-        _difference = difference;
-        _isOpen = isOpen;
-    }
-    String dump() {
-        String res = id + "," + time + "," + ((isOpen) ? "B," : "E,");
-        for (int i = 0; i < |difference|; i++) {
-            res += difference[i];
-            if (i != |difference|-1) {
-                res += ",";
-            }
-        }
-        return res;
-    }
-}
-
 void mainLoop(Array<Decl> decls) {
-    int offed = 0;
     int time = 0;
-    Elevator e = new(1);
-    ElevatorEvent[] ee = [];
-    while (true) {
-        Decl decl = decls[offed];
-        offed++;
-        time += e.changeFloor(decl.onFloor);
-        if (time< decl.requestTime - DELAY) {
-            time = decl.requestTime - DELAY;
-        }
-        ee.add(new ElevatorEvent(e, [], time, true));
+    int floor = 1;
+    foreach (Decl decl in decls) {
+        time += Math.abs(floor - decl.onFloor) * 2;
+        floor = decl.onFloor;
+        if (decl.requestTime > DELAY + time) time = decl.requestTime - DELAY;
+        OUT << 1 << "," << time << "," << floor << "," << "B," << 0 << ",0,0,0,0" << EOL;
         time += DELAY;
-        ee.add(new ElevatorEvent(e, [decl.id], time, false));
-        time += e.changeFloor(decl.offFloor);
-        ee.add(new ElevatorEvent(e, [decl.id], time, true));
-        if (offed == |decls|) {
-            break;
-        }
+        OUT << 1 << "," << time << "," << floor << "," << "E," << decl.id << ",0,0,0,0" << EOL;
+        time += Math.abs(floor - decl.offFloor) * 2;
+        floor = decl.offFloor;
+        OUT << 1 << "," << time << "," << floor << "," << "B," << decl.id << ",0,0,0,0" << EOL;
         time += DELAY;
-        ee.add(new ElevatorEvent(e, [], time, false));
-    }
-    foreach (ElevatorEvent ans in ee) {
-        OUT << ans.dump() << EOL;
+        OUT << 1 << "," << time << "," << floor << "," << "E," << 0 << ",0,0,0,0" << EOL;
     }
 }
 void main(String[] args) {
