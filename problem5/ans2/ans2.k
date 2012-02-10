@@ -1,148 +1,108 @@
 using konoha.math.*;
+MAXCAPACITY=5;
 DELAY=5;
-NUMCAPACITY=1;
+int capacity;
+int numElevator;
+@Public dynamic Array.last() {
+    return this[|this|-1];
+}
 class Decl {
     int id;
     int requestTime;
-    int closeFloor;
-    int openFloor;
+    int onFloor;
+    int offFloor;
     Decl(Array<String> data) {
         _id = (int)data[0];
         _requestTime = (int)data[1];
-        _closeFloor = (int)data[2];
-        _openFloor = (int)data[3];
+        _onFloor = (int)data[2];
+        _offFloor = (int)data[3];
     }
 }
-class ElevatorEvent {
+class Event {
     int id;
     int time;
     int floor;
-    boolean isOpen;
-    Array<Int> difference;
-    ElevatorEvent (int id, int floor, Array<Int> difference, int time, boolean isOpen) {
-        _id = id;
-        _floor = floor;
-        _time = time;
-        _difference = difference;
-        _isOpen = isOpen;
-    }
-    String dump() {
-        String res = id + "," + time + "," + floor + "," + ((isOpen) ? "B," : "E,");
-        for (int i = 0; i < |difference|; i++) {
-            res += difference[i];
-            if (i != |difference|-1) {
-                res += ",";
+    String eventStr;
+    int[] target;
+    Event(String[] data) {
+        this.id = (to Int)data[0];
+        this.time = (to Int)data[1];
+        this.floor = (to Int)data[2];
+        this.eventStr = data[3];
+        this.target = [];
+        for (int i = 4; i < |data|; i++) {
+            if (data[i] != "0") {
+                target.add((to Int) data[i]);
             }
         }
-        return res;
     }
 }
-class Elevator {
-    int id;
-    ElevatorEvent[] ee;
-    Elevator(int id) {
-        _id = id;
-        _ee = [];
-    }
-    int changeFloor(int fromFloor, int toFloor) {
-        return Math.abs(fromFloor - toFloor) * 2;
-    }
-    int openToOpen(Decl decl1, Decl decl2, int time) {
-        if (decl1.openFloor == decl2.openFloor) {
-            ee[|ee|-1].difference.remove(ee[|ee|-1].difference.indexOf(decl2.id));
-            return time;
-        } else {
-            time += DELAY;
-            ee.add(new ElevatorEvent(this.id, decl1.openFloor, [], time, false));
-            time += changeFloor(decl1.openFloor, decl2.openFloor);
-            ee.add(new ElevatorEvent(this.id, decl2.openFloor, [decl2.id], time, true));
-            return time;
-        }
-    }
-    int openToClose(Decl decl1, Decl decl2, int time) {
-        if (decl1.openFloor == decl2.closeFloor) {
-            time += DELAY;
-            time = (time < decl2.requestTime) ? decl2.requestTime : time;
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [decl2.id], time, false));
-            return time;
-        } else {
-            time += DELAY;
-            ee.add(new ElevatorEvent(this.id, decl1.openFloor, [], time, false));
-            time += changeFloor(decl1.openFloor, decl2.closeFloor);
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [], time, true));
-            time += DELAY;
-            time = (time < decl2.requestTime) ? decl2.requestTime : time;
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [decl2.id], time, false));
-            return time;
-        }
-    }
-    int closeToOpen(Decl decl1, Decl decl2, int time) {
-        if (decl1.closeFloor == decl2.openFloor) {
-            ee.add(new ElevatorEvent(this.id, decl2.openFloor, [decl2.id], time, true));
-            return time;
-        } else {
-            time += changeFloor(decl1.closeFloor, decl2.openFloor);
-            ee.add(new ElevatorEvent(this.id, decl2.openFloor, [decl2.id], time, true));
-            return time;
-        }
-    }
-    int closeToClose(Decl decl1, Decl decl2, int time) {
-        if (decl1 == null) {
-            time += changeFloor(1, decl2.closeFloor);
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [], time, true));
-            time += DELAY;
-            time = (time < decl2.requestTime) ? decl2.requestTime : time;
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [decl2.id], time, false));
-            return time;
-        } else if (decl1.closeFloor == decl2.closeFloor) {
-            ee[|ee|-1].difference.add(decl2.id);
-            return time;
-        } else {
-            time += changeFloor(decl1.closeFloor, decl2.closeFloor);
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [], time, true));
-            time += DELAY;
-            time = (time < decl2.requestTime) ? decl2.requestTime : time;
-            ee.add(new ElevatorEvent(this.id, decl2.closeFloor, [decl2.id], time, false));
-            return time;
-        }
-    }
-    void dump() {
-        foreach(ElevatorEvent tmp in ee) {
-            OUT << tmp.dump() << EOL;
-        }
-    }
+int changeFloor(int floor0, int floor1) {
+    return Math.abs(floor0-floor1) * 2;
 }
-void mainLoop(Array<Decl> decls) {
-    int offset = 0;
-    int lostime = 0;
-    int time = 0;
-    Elevator e = new Elevator(1);
-    Decl decl1 = decls[0];
-    Decl decl2 = null;
-    time = e.closeToClose(null, decl1, time);
-    offset++;
-    while (offset < |decls|) {
-        decl2 = decls[offset];
-        offset++;
-        time = e.closeToOpen(decl1, decl1, time);
-        lostime += time - decl1.requestTime;
-        time = e.openToClose(decl1, decl2, time);
-        decl1 = decl2;
+void confirm(Decl[] decls, Event[] events) {
+    int[][] passenger = new Int[][numElevator+1];
+    Event[][] chkevents = new Event[][numElevator+1];
+    int declComfirmed = 0;
+    for (int i = 0; i < numElevator+1; i++) {
+        passenger[i] = [];
+        chkevents[i] = [new Event((i + ",0,1,E,0,0,0,0,0").split(","))];
     }
-    time = e.closeToOpen(decl1, decl1, time);
-    lostime += time - decl1.requestTime;
-    e.dump();
-    print lostime;
+    Event publicLast = new Event(("1,0,1,E,0,0,0,0,0").split(","));
+    for (int i = 0; i < |events|; i++) {
+        Event e = events[i];
+        print i, e;
+        assert(publicLast.time <= e.time);
+        assert(e.id <= numElevator);
+        assert(e.eventStr == "E" || e.eventStr == "B");
+        Event last = chkevents[e.id].last();
+        if (e.eventStr == "B") {
+            assert(last.eventStr == "E");
+            assert(e.time >= last.time + changeFloor(e.floor, last.floor));
+            if (|e.target| > 0) {
+                foreach (int p in e.target) {
+                    assert(passenger[e.id].indexOf(p) != -1);
+                    passenger[e.id].remove(passenger[e.id].indexOf(p));
+                    declComfirmed++;
+                }
+            }
+            chkevents[e.id].add(e);
+        } else {
+            assert(last.eventStr == "B");
+            assert(e.time >= last.time + DELAY);
+            assert(e.floor == last.floor);
+            if (|e.target| > 0) {
+                foreach (int p in e.target) {
+                    assert(decls[p].requestTime <= e.time);
+                    passenger[e.id].add(p);
+                }
+            }
+            chkevents[e.id].add(e);
+        }
+        publicLast = e;
+    }
+    assert(declComfirmed == |decls|-1);
+    OUT.println("Confirmed");
 }
 void main(String[] args) {
-    InputStream input = new("../input/input_i.csv");
-    if (|args| > 0) {
-        input = new (args[0]);
+    if (|args| != 4) {
+        print "Usage: [input] [output] [capacity] [elevator count]";
+        return;
     }
-    Decl[] decls = [];
+
+    InputStream inputdata = new (args[0]);
+    InputStream outputdata = new (args[1]);
+    capacity = (to Int)args[2];
+    assert(capacity <= MAXCAPACITY);
+    numElevator = (to Int) args[3];
+    Decl[] decls = [null];
+    Event[] events = [];
     String s = "";
-    while ((s = input.readLine()) != null) {
+    while ((s = inputdata.readLine()) != null) {
         decls.add(new Decl(s.split(",")));
     }
-    mainLoop(decls);
+    while ((s = outputdata.readLine()) != null) {
+        events.add(new Event(s.split(",")));
+    }
+    confirm(decls, events);
 }
