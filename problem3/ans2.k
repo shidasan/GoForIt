@@ -13,7 +13,7 @@ String getStr() {
 }
 
 /* ソート済みの配列に対するデータの挿入 */
-Int[] array_add2(Int[] array, int value) {
+Int[] addarray(Int[] array, int value) {
     if (array == null) {
         array = [];
     }
@@ -79,7 +79,7 @@ void main(String[] args) {
                 if (result[skip] == null) {
                     result[skip] = [data[0][i]+1];
                 } else {
-                    result[skip] = array_add2(result[skip], data[0][i]+1);
+                    result[skip] = addarray(result[skip], data[0][i]+1);
                 }
             }
         }
@@ -103,7 +103,7 @@ void main(String[] args) {
                 if (result[skip] == null) {
                     result[skip] = [reverceData[0][i]+1];
                 } else {
-                    result[skip] = array_add2(result[skip], reverceData[0][i]+1);
+                    result[skip] = addarray(result[skip], reverceData[0][i]+1);
                 }
             }
         }
